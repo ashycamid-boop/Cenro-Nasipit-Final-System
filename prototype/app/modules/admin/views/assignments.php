@@ -1,0 +1,196 @@
+<?php require_once __DIR__ . '/../controllers/assignments_backend.php'; ?>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Assignments</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="../../../../public/assets/css/modules/admin/common.css">
+  <link rel="stylesheet" href="../../../../public/assets/css/modules/admin/assignments.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css?family=Fredoka+One:400&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="layout">
+    <nav class="sidebar" role="navigation" aria-label="Main sidebar">
+      <div class="sidebar-logo">
+        <img src="../../../../public/assets/images/denr-logo.png" alt="DENR Logo">
+        <span>CENRO</span>
+      </div>
+      <div class="sidebar-role"><?php echo htmlspecialchars($sidebarRole, ENT_QUOTES, 'UTF-8'); ?></div>
+      <nav class="sidebar-nav" aria-label="Sidebar menu">
+        <ul>
+          <li><a href="dashboard.php"><i class="fa fa-th-large"></i> Dashboard</a></li>
+          <li><a href="user_management.php"><i class="fa fa-users"></i> User Management</a></li>
+          <li><a href="spot_reports.php"><i class="fa fa-file-text"></i> Spot Reports</a></li>
+          <li><a href="case_management.php"><i class="fa fa-briefcase"></i> Case Management</a></li>
+          <li><a href="apprehended_items.php"><i class="fa fa-archive"></i> Apprehended Items</a></li>
+          <li><a href="equipment_management.php"><i class="fa fa-cogs"></i> Equipment Management</a></li>
+          <li class="active"><a href="assignments.php"><i class="fa fa-tasks"></i> Assignments</a></li>
+          
+          <li class="dropdown">
+            <a href="#" class="dropdown-toggle" id="serviceDeskToggle" data-target="serviceDeskMenu">
+              <i class="fa fa-headset"></i> Service Desk 
+              <i class="fa fa-chevron-down dropdown-arrow"></i>
+            </a>
+            <ul class="dropdown-menu" id="serviceDeskMenu">
+              <li><a href="new_requests.php">New Requests <span class="badge">2</span></a></li>
+              <li><a href="ongoing_scheduled.php">Ongoing / Scheduled <span class="badge badge-blue">2</span></a></li>
+              <li><a href="completed.php">Completed</a></li>
+              <li><a href="all_requests.php">All Requests</a></li>
+            </ul>
+          </li>
+          <li><a href="statistical_report.php"><i class="fa fa-chart-bar"></i> Statistical Report</a></li>
+        </ul>
+      </nav>
+    </nav>
+    <div class="main">
+      <div class="topbar">
+        <div class="topbar-card">
+          <div class="topbar-title">Assignments</div>
+          <?php include __DIR__ . '/../../shared/views/topbar_profile.php'; ?>
+        </div>
+      </div>
+      <div class="main-content">
+        <div class="container-fluid">
+          <div class="top-action-bar mb-4">
+            <div class="row align-items-center">
+              <div class="col-md-3">
+                <div class="search-box">
+                  <input type="text" class="form-control" id="searchInput" placeholder="Search">
+                </div>
+              </div>
+              <div class="col-md-2">
+                <select class="form-select" id="roleFilter">
+                  <option value="">Role</option>
+                  <option value="Enforcement Officer">Enforcement Officer</option>
+                  <option value="Enforcer">Enforcer</option>
+                  <option value="Property Custodian">Property Custodian</option>
+                  <option value="Office Staff">Office Staff</option>
+                </select>
+              </div>
+              <div class="col-md-2">
+                <select class="form-select" id="officeUnitFilter">
+                  <option value="">Select Office/Unit</option>
+                  <option value="Antongalon ENR Monitoring Information and Assistance Center">Antongalon ENR Monitoring Information and Assistance Center</option>
+                  <option value="BIT-OS ENR Monitoring Information and Assistance Center">BIT-OS ENR Monitoring Information and Assistance Center</option>
+                  <option value="Bokbokon Anti-Illegal Logging Taskforce Checkpoint">Bokbokon Anti-Illegal Logging Taskforce Checkpoint</option>
+                  <option value="Buenavista ENR Monitoring Information and Assistance Center">Buenavista ENR Monitoring Information and Assistance Center</option>
+                  <option value="Camagong Anti-Environmental Crime Task Force (AECTF) Checkpoint">Camagong Anti-Environmental Crime Task Force (AECTF) Checkpoint</option>
+                  <option value="CBFM">CBFM</option>
+                  <option value="CRFMU">CRFMU</option>
+                  <option value="Dankias ENR Monitoring Information and Assistance Center">Dankias ENR Monitoring Information and Assistance Center</option>
+                  <option value="Foreshore Management Unit">Foreshore Management Unit</option>
+                  <option value="Licensing and Permitting Unit">Licensing and Permitting Unit</option>
+                  <option value="Lumbocan ENR Monitoring Information and Assistance Center">Lumbocan ENR Monitoring Information and Assistance Center</option>
+                  <option value="Monitoring and Evaluation Unit">Monitoring and Evaluation Unit</option>
+                  <option value="Nasipit Port ENR Monitoring Information and Assistance Center">Nasipit Port ENR Monitoring Information and Assistance Center</option>
+                  <option value="NGP">NGP</option>
+                  <option value="PABEU">PABEU</option>
+                  <option value="Patents and Deeds Unit">Patents and Deeds Unit</option>
+                  <option value="Planning Unit">Planning Unit</option>
+                  <option value="Support Unit">Support Unit</option>
+                  <option value="Survey and Mapping Unit">Survey and Mapping Unit</option>
+                  <option value="WATERSHED">WATERSHED</option>
+                  <option value="WRUS">WRUS</option>
+                </select>
+              </div>
+              <div class="col-md-2">
+                <div class="d-flex gap-2">
+                  <button class="btn btn-primary" id="applyBtn">
+                    <i class="fa fa-filter me-1"></i>Apply
+                  </button>
+                  <button class="btn btn-outline-secondary" id="clearBtn">Clear</button>
+                </div>
+              </div>
+              <div class="col-md-3 text-end">
+                <button class="btn btn-outline-dark" onclick="printAllQRCodes()">
+                  <i class="fa fa-print me-2"></i>Print All QR Codes
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="assignments-table-section">
+            <div class="table-responsive">
+              <table class="table table-bordered" id="assignmentsTable">
+                <thead class="table-light">
+                  <tr>
+                    <th>User ID</th>
+                    <th>Full Name</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Office/Unit</th>
+                    <th>Devices</th>
+                    <th>QR Code</th>
+                    <th>Details</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <?php if (count($users) > 0): ?>
+                    <?php foreach ($users as $user): ?>
+                      <?php
+                        $defaultAvatar = '../../../../public/assets/images/default-avatar.png';
+                        $imgSrc = $defaultAvatar;
+                        if (!empty($user['profile_picture'])) {
+                          $stored = ltrim($user['profile_picture'], '/');
+                          $fsPath = __DIR__ . '/../../../../' . $stored;
+                          $imgSrc = file_exists($fsPath) ? ('../../../../' . $stored) : ('../../../../' . $stored);
+                        }
+                        // Build a full URL that points to the assigned-devices page for this user.
+                        // Scanning the QR will open the user's assigned devices details.
+                        $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+                        $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+                        // Directory of current request (e.g. /prototype/app/modules/admin/views)
+                        $dir = rtrim(dirname($_SERVER['REQUEST_URI']), '/\\');
+                        $assignedPath = $dir . '/assigned-devices.php?user_id=' . urlencode($user['id']);
+                        $qrUrl = $scheme . '://' . $host . $assignedPath;
+                        $qrData = urlencode($qrUrl);
+                      ?>
+                      <tr>
+                        <td><?php echo htmlspecialchars($user['id']); ?></td>
+                        <td>
+                          <img src="<?php echo htmlspecialchars($imgSrc); ?>" alt="Avatar" style="width:36px;height:36px;object-fit:cover;border-radius:50%;vertical-align:middle;margin-right:8px;">
+                          <span><?php echo htmlspecialchars($user['full_name'] ?? ''); ?></span>
+                        </td>
+                        <td><?php echo htmlspecialchars($user['email']); ?></td>
+                        <td><?php echo htmlspecialchars($user['role']); ?></td>
+                        <td><?php echo !empty($user['office_unit']) ? htmlspecialchars($user['office_unit']) : '-'; ?></td>
+                        <td class="text-center"><a href="assigned_devices.php?user_id=<?php echo urlencode($user['id']); ?>"><?php echo (isset($user['device_count']) ? (int)$user['device_count'] : 0); ?></a></td>
+                        <td><img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=<?php echo $qrData; ?>" class="qr-code-image" alt="QR"></td>
+                        <td><a href="assigned_devices.php?user_id=<?php echo urlencode($user['id']); ?>" class="btn btn-sm btn-outline-primary">Details</a></td>
+                        <td>
+                          <div class="d-flex gap-1">
+                            <button type="button" class="btn btn-sm btn-secondary" onclick="printAssignedDevices('<?php echo htmlspecialchars($user['id']); ?>')" aria-label="Print QR card">
+                              <i class="fa fa-print"></i>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    <?php endforeach; ?>
+                  <?php else: ?>
+                    <tr>
+                      <td colspan="9" class="text-center text-muted py-3">No users found.</td>
+                    </tr>
+                  <?php endif; ?>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- QR printable grid removed; QR cards will be generated dynamically when needed -->
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="../../../../public/assets/js/admin/dashboard.js"></script>
+  <script src="../../../../public/assets/js/admin/navigation.js"></script>
+  <script src="../../../../public/assets/js/admin/assignments.js"></script>
+</body>
+</html>

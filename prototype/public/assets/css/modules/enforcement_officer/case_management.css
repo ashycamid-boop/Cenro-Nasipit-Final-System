@@ -1,0 +1,51 @@
+﻿.badge.bg-primary {
+      background-color: #0d6efd !important;
+      color: white !important;
+    }
+    .badge.bg-success {
+      background-color: #198754 !important;
+      color: white !important;
+    }
+    /* Summary card sizing tweaks */
+    .summary-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 0.5rem 0.75rem;
+      min-width: 110px;
+      box-sizing: border-box;
+    }
+    .summary-label {
+      font-size: 0.78rem;
+      color: #555;
+      text-align: center;
+      white-space: nowrap;
+    }
+    .summary-value {
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin-top: 0.25rem;
+      text-align: center;
+      white-space: nowrap;
+    }
+    /* Compact pill layout */
+    .summary-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.65rem;
+      align-items: center;
+    }
+    .summary-pill {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      background: #f8f9fa;
+      border: 1px solid #e9ecef;
+      padding: 0.6rem 0.85rem;
+      border-radius: 999px;
+      min-width: 120px;
+      box-sizing: border-box;
+    }
+    .pill-label { font-size: 0.85rem; color: #555; white-space: nowrap; }
+    .pill-count { font-weight: 800; font-size: 1.15rem; color: #222; }

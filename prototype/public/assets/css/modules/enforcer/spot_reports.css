@@ -1,0 +1,47 @@
+.badge { font-size: 0.7rem; padding: 4px 8px; border-radius: 20px; }
+.badge.bg-success { background-color: #28a745 !important; }
+.badge.bg-warning { background-color: #ffc107 !important; color: #212529 !important; }
+.badge.bg-danger { background-color: #dc3545 !important; }
+
+/* Compact table styling */
+.table thead th,
+.table tbody td {
+  font-size: 0.85rem;
+  padding: 0.45rem 0.6rem;
+}
+
+.table thead th { font-size: 0.8rem; }
+.status-comment-btn i { font-size: 0.95rem; }
+.btn-sm { padding: 0.25rem 0.5rem; font-size: 0.82rem; }
+
+/* Ensure Bootstrap utility classes like fs-6 don't enlarge these badges */
+.badge.fs-6 { font-size: 0.7rem !important; padding: 4px 8px !important; }
+
+.spot-filter-control {
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+  height: 38px;
+}
+
+.spot-btn-apply {
+  border-radius: 8px;
+  background: #1976d2;
+  border: none;
+  height: 38px;
+  font-size: 14px;
+}
+
+.spot-btn-clear {
+  border-radius: 8px;
+  height: 38px;
+  font-size: 14px;
+}
+
+.spot-btn-new-report {
+  border-radius: 8px;
+  background: #1976d2;
+  border: none;
+  padding: 8px 16px;
+  font-size: 14px;
+  text-decoration: none;
+}

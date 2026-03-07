@@ -1,0 +1,13 @@
+/* Make all form inputs readonly in request_details.php */
+input,
+textarea,
+select {
+  background-color: #f8f9fa !important;
+  pointer-events: none !important;
+}
+
+input[type="file"] {
+  opacity: 0.5 !important;
+  pointer-events: none !important;
+}
+

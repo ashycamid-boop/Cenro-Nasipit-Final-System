@@ -1,0 +1,31 @@
+﻿.bg-purple { background-color: #6f42c1 !important; color: white !important; }
+    .bg-orange { background-color: #fd7e14 !important; color: white !important; }
+    .bg-teal { background-color: #20c997 !important; color: white !important; }
+    .bg-indigo { background-color: #6610f2 !important; color: white !important; }
+    .bg-pink { background-color: #e83e8c !important; color: white !important; }
+    .bg-cyan { background-color: #0dcaf0 !important; color: white !important; }
+    .badge.bg-success { background-color: #28a745 !important; color: white !important; }
+    .badge.bg-primary { background-color: #0d6efd !important; color: white !important; }
+    /* Evidence icon styles */
+    .evidence-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      box-shadow: 0 1px 2px rgba(16,24,40,0.04), 0 1px 3px rgba(16,24,40,0.06);
+      border: 1px solid rgba(13,110,253,0.06);
+      text-decoration: none;
+      color: #2c3e50;
+      transition: transform .12s ease, box-shadow .12s ease;
+      padding: 0;
+      margin-right: 6px;
+    }
+    .evidence-icon .fa { font-size: 16px; }
+    .evidence-icon:hover { transform: translateY(-2px); box-shadow: 0 6px 12px rgba(16,24,40,0.08); }
+    .evidence-icon[data-type="image"] { background: linear-gradient(180deg, #fff 0%, #f8fafc 100%); color: #0d6efd; }
+    .evidence-icon[data-type="pdf"] { background: linear-gradient(180deg, #fff 0%, #fff5f5 100%); color: #d63384; }
+    .evidence-icon[data-type="file"] { background: linear-gradient(180deg, #fff 0%, #fbfbfc 100%); color: #6c757d; }
+    .evidence-icon[title] { position: relative; }
+    .evidence-icon:focus { outline: none; box-shadow: 0 0 0 3px rgba(13,110,253,0.12); }

@@ -1,0 +1,79 @@
+/* Style inputs with light background; admin can edit fields here */
+    input, textarea, select {
+      background-color: #f8f9fa !important;
+    }
+    /* Increase main content readability: enlarge base font and override tiny inline sizes */
+    .main .main-content { font-size: 14px; }
+    .main .main-content table,
+    .main .main-content td,
+    .main .main-content th,
+    .main .main-content input,
+    .main .main-content select,
+    .main .main-content textarea,
+    .main .main-content .signature-box {
+      font-size: 14px !important;
+    }
+    .main .main-content .container-fluid { max-width: 1100px; }
+    /* Prevent horizontal scroll and keep main containers free to expand */
+    html, body { overflow-x: hidden; }
+    .layout, .main, .main-content, .container-fluid, #viewForm, #viewForm > div { overflow: visible !important; max-height: none !important; height: auto !important; }
+    /* Shift Back button left so it doesn't align with centered main content */
+    .back-left { position: relative; left: -150px; }
+    @media (max-width: 768px) { .back-left { left: 0; } }
+    /* Remove default border for ack signature box (screen and print) */
+    #ack_sig_box { border: none !important; box-shadow: none !important; background: transparent !important; }
+    /* Print styles: use Legal (8.5in x 14in) portrait with a comfortable margin */
+    /* Explicit portrait orientation helps browsers choose the correct layout */
+    /* Reduce margins slightly to gain printable space for single-page output */
+    @page { size: legal portrait; margin: 8mm; }
+    @media print {
+      html, body { background: #fff !important; color-adjust: exact; -webkit-print-color-adjust: exact; }
+      /* Hide navigation, controls and non-essential UI */
+      .sidebar, .topbar, .sidebar-nav, .btn, .dropdown, .modal, .no-print, .navigation, .topbar-card { display: none !important; }
+      /* Expand main content to full width for printing */
+      .layout, .main, .main-content, .container-fluid { width: 100% !important; max-width: none !important; padding: 0 !important; margin: 0 !important; }
+      /* Ensure tables and borders print correctly */
+      table { page-break-inside: avoid; }
+      tr, td, th { -webkit-print-color-adjust: exact; color-adjust: exact; }
+      /* Avoid clipping of images/signatures */
+      img { max-width: 100% !important; height: auto !important; }
+      /* Remove pointer cursors and interactive affordances */
+      .signature-box { cursor: default !important; }
+      /* Specifically hide border on the acknowledgment signature box when printing */
+      #ack_sig_box { border: none !important; box-shadow: none !important; }
+      /* Size and center the printable SRF to match hardcopy sample on Legal paper */
+      /* Legal width (8.5in) minus left/right margins (12mm each ~= 0.472in) => ~7.56in printable width */
+      #viewForm > div { width: 7.55in !important; max-width: none !important; margin: 0 auto !important; box-sizing: border-box !important; }
+      /* Prevent unexpected scaling/rotation from browser print preview */
+      html, body, #viewForm { height: auto !important; transform: none !important; -webkit-transform: none !important; }
+      /* Ensure images and signatures render at natural size and don't rotate */
+      img { max-width: 100% !important; height: auto !important; -webkit-transform: none !important; transform: none !important; }
+      /* Ensure content doesn't get scaled by browser; prefer real 100% size */
+      #viewForm, #viewForm * { -webkit-transform: none !important; transform: none !important; }
+      /* Prevent scrollbars on printed page by forcing visible overflow and auto heights */
+      html, body, .layout, .main, .main-content, .container-fluid, #viewForm, #viewForm > div { overflow: visible !important; height: auto !important; max-height: none !important; }
+      /* Allow the form container and tables to break normally to avoid an extra blank page.
+         Keep avoiding breaks inside individual table rows so rows are not split across pages. */
+      #viewForm > div {
+        page-break-inside: auto !important;
+        break-inside: auto !important;
+        margin-top: 0 !important;
+        padding-top: 0 !important;
+      }
+      #viewForm table {
+        page-break-inside: auto !important;
+        break-inside: auto !important;
+      }
+      /* Prevent rows from being split across pages */
+      tr {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+      }
+      /* Tighter print layout: reduce font-size, paddings and slightly scale to fit one page */
+      #viewForm, #viewForm * { font-size: 10px !important; }
+      #viewForm table td, #viewForm table th { padding: 4px !important; }
+      /* Apply a small uniform scale so the whole SRF fits a single printable page */
+      #viewForm > div { transform-origin: top left; transform: scale(0.94); }
+      /* Remove any top margin that could push content down */
+      body, #viewForm { margin-top: 0 !important; padding-top: 0 !important; }
+    }

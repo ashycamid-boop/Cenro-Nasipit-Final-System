@@ -1,0 +1,12 @@
+/* Keep request details form view-only */
+input,
+textarea,
+select {
+  background-color: #f8f9fa !important;
+  pointer-events: none !important;
+}
+
+input[type="file"] {
+  opacity: 0.5 !important;
+  pointer-events: none !important;
+}

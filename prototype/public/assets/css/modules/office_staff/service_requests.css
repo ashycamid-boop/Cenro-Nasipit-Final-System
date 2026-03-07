@@ -1,0 +1,37 @@
+/* Service Requests page styles */
+.sr-filter-input {
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+  height: 38px;
+}
+
+.sr-btn-apply {
+  border-radius: 8px;
+  background: #1976d2;
+  border: none;
+  height: 38px;
+  font-size: 14px;
+}
+
+.sr-btn-clear {
+  border-radius: 8px;
+  height: 38px;
+  font-size: 14px;
+}
+
+.sr-btn-new {
+  border-radius: 8px;
+  background: #1976d2;
+  border: none;
+  padding: 8px 16px;
+  font-size: 14px;
+  text-decoration: none;
+}
+
+.sr-status-badge {
+  color: white;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+}
+

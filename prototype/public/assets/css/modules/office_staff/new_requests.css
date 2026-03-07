@@ -1,0 +1,13 @@
+/* Allow input for new requests form */
+.readonly-section input,
+.readonly-section textarea,
+.readonly-section select {
+  background-color: #f8f9fa !important;
+  pointer-events: none !important;
+}
+
+.readonly-section input[type="file"] {
+  opacity: 0.5 !important;
+  pointer-events: none !important;
+}
+

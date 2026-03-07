@@ -1,0 +1,12 @@
+.new-requests-table {
+  font-size: 0.85rem;
+}
+
+.new-requests-cell-head {
+  padding: 8px;
+}
+
+.new-requests-cell-body {
+  padding: 8px;
+  vertical-align: middle;
+}

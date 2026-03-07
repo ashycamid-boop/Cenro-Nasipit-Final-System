@@ -1,0 +1,28 @@
+.sr-control {
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+  height: 38px;
+}
+
+.sr-btn-primary {
+  border-radius: 8px;
+  background: #1976d2;
+  border: none;
+  height: 38px;
+  font-size: 14px;
+}
+
+.sr-btn-clear {
+  border-radius: 8px;
+  height: 38px;
+  font-size: 14px;
+}
+
+.sr-btn-new-request {
+  border-radius: 8px;
+  background: #1976d2;
+  border: none;
+  padding: 8px 16px;
+  font-size: 14px;
+  text-decoration: none;
+}

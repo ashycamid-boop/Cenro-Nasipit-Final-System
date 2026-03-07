@@ -1,0 +1,1014 @@
+document.addEventListener('DOMContentLoaded', async function() {
+      const preloadedUsers = (() => { try { return JSON.parse(document.body.dataset.preloadedUsers || '[]'); } catch (e) { return []; } })();
+      let equipmentData = {};
+      let usersData = Array.isArray(preloadedUsers) ? preloadedUsers : [];
+
+     // Helper: return first existing property value from a list of possible keys
+     function getProp(obj, ...keys) {
+       if (!obj) return '';
+       for (const k of keys) {
+         if (obj[k] !== undefined && obj[k] !== null && String(obj[k]).trim() !== '') return obj[k];
+       }
+       return '';
+     }
+    
+      // load users first then equipment
+      await loadUsers();
+      await loadEquipmentData();
+
+     // Helper: wrap service calls to avoid JSON parse errors when server returns HTML (session expired / login redirect)
+     async function safeServiceCall(promise) {
+       try {
+         const res = await promise;
+
+         // If service returned an object that indicates session expiry, handle it
+         if (res && (res.sessionExpired === true || (typeof res.error === 'string' && res.error.toLowerCase().includes('session')))) {
+          console.warn('Service indicates session expired or returned HTML:', res);
+          // give user a short message then redirect to login page
+          alert('Session expired or server returned an authentication page. You will be redirected to the login page.');
+          window.location.href = '../../../../index.php'; // adjust if your login path differs
+          return { error: 'session' , sessionExpired: true };
+        }
+ 
+         // If response is undefined/null, normalize
+         if (res === undefined || res === null) {
+           return { error: 'Empty response from server' };
+         }
+ 
+         return res;
+       } catch (err) {
+         console.error('Service call failed:', err);
+         return { error: err && err.message ? err.message : 'Service call failed' };
+       }
+     }
+ 
+      async function loadUsers() {
+        const accountablePersonSelect = document.getElementById('accountablePerson');
+        const actualUserSelect = document.getElementById('actualUser');
+
+        if (accountablePersonSelect) accountablePersonSelect.innerHTML = '<option value="">Loading users...</option>';
+        if (actualUserSelect) actualUserSelect.innerHTML = '<option value="">Loading users...</option>';
+
+        try {
+          let users = Array.isArray(preloadedUsers) ? [...preloadedUsers] : [];
+
+          // 1) Try EquipmentService.getUsers() safely
+          try {
+            if (window.EquipmentService && typeof EquipmentService.getUsers === 'function') {
+              const res = await EquipmentService.getUsers();
+              console.log('EquipmentService.getUsers() ->', res);
+
+              if (typeof res === 'string' && res.trim().startsWith('<')) {
+                // service returned HTML (login redirect or page) — avoid JSON.parse error, will fallback below
+                console.warn('getUsers returned HTML string; skipping JSON parse here.');
+                console.warn('getUsers returned HTML string; skipping JSON parse here.');
+              } else if (res && res.data && Array.isArray(res.data)) {
+                users = res.data;
+              } else if (Array.isArray(res)) {
+                users = res;
+              } else if (res && Array.isArray(res.users)) {
+                users = res.users;
+              }
+            }
+          } catch (e) {
+            console.warn('EquipmentService.getUsers() failed:', e);
+          }
+
+          // 2) If empty, try a few known JSON endpoints (safe fetch + try parse)
+          if (!users.length) {
+            const endpoints = [
+              '../../../../public/api/users.php',
+              '/api/users.php',
+              'user_management.php?format=json',
+              'user_management.php' // will be parsed as HTML if JSON fails
+            ];
+
+            for (const ep of endpoints) {
+              try {
+                const resp = await fetch(ep, { credentials: 'same-origin' });
+                if (!resp.ok) continue;
+                const text = await resp.text();
+
+                // try parse JSON first
+                try {
+                  const parsed = JSON.parse(text);
+                  if (parsed && parsed.data && Array.isArray(parsed.data)) users = parsed.data;
+                  else if (Array.isArray(parsed)) users = parsed;
+                  if (users.length) break;
+                } catch (jsonErr) {
+                  // not JSON — if endpoint is HTML (like user_management.php), try parsing table rows
+                  const doc = new DOMParser().parseFromString(text, 'text/html');
+                  const rows = doc.querySelectorAll('table tbody tr');
+                  if (rows && rows.length) {
+                    rows.forEach(row => {
+                      const cells = row.querySelectorAll('td');
+                      if (cells.length >= 2) {
+                        const id = cells[0].textContent.trim();
+                        const name = cells[1].textContent.trim();
+                        if (name) users.push({ id: id || null, full_name: name });
+                      }
+                    });
+                    if (users.length) break;
+                  }
+                }
+              } catch (fetchErr) {
+                // ignore and try next endpoint
+              }
+            }
+          }
+
+          // Normalize users objects
+          users = (users || []).map(u => {
+            if (typeof u === 'string') return { id: null, full_name: u, sex: '' };
+            return {
+              id: u.id !== undefined ? u.id : (u.user_id !== undefined ? u.user_id : (u.id_user !== undefined ? u.id_user : null)),
+              full_name: u.full_name || u.name || `${u.first_name || ''} ${u.last_name || ''}`.trim(),
+              sex: u.sex || u.gender || ''
+            };
+          }).filter(u => u.full_name);
+
+          // sort
+          users.sort((a,b)=> (a.full_name||'').toLowerCase().localeCompare((b.full_name||'').toLowerCase()));
+
+          usersData = users;
+          populateUserDropdowns();
+        } catch (err) {
+          console.error('Error loading users (final):', err);
+          usersData = [];
+          if (accountablePersonSelect) accountablePersonSelect.innerHTML = '<option value="">Unable to load users</option>';
+          if (actualUserSelect) actualUserSelect.innerHTML = '<option value="">Unable to load users</option>';
+        }
+
+        return usersData;
+      }
+
+      function populateUserDropdowns() {
+        const accountablePersonSelect = document.getElementById('accountablePerson');
+        const actualUserSelect = document.getElementById('actualUser');
+        if (!accountablePersonSelect || !actualUserSelect) return;
+
+        // default options
+        accountablePersonSelect.innerHTML = '<option value="">Select Person</option>';
+        actualUserSelect.innerHTML = '<option value="">Select User</option>';
+
+        if (!usersData || usersData.length === 0) {
+          const noOption1 = document.createElement('option');
+          noOption1.value = '';
+          noOption1.textContent = 'No users found';
+          accountablePersonSelect.appendChild(noOption1);
+
+          const noOption2 = document.createElement('option');
+          noOption2.value = '';
+          noOption2.textContent = 'No users found';
+          actualUserSelect.appendChild(noOption2);
+
+          // small helper link
+          if (!document.getElementById('manageUsersHint')) {
+            const hint = document.createElement('div');
+            hint.id = 'manageUsersHint';
+            hint.style.marginTop = '6px';
+            hint.innerHTML = '<small>No users available. <a href="user_management.php">Open User Management</a> to add users.</small>';
+            accountablePersonSelect.parentElement.appendChild(hint);
+          }
+          return;
+        }
+
+        // remove previous hint if present
+        const oldHint = document.getElementById('manageUsersHint');
+        if (oldHint) oldHint.remove();
+
+        usersData.forEach(user => {
+          const display = user.full_name;
+          const value = (user.id !== null && user.id !== undefined && String(user.id) !== '') ? String(user.id) : display;
+
+          const option1 = document.createElement('option');
+          option1.value = value;
+          option1.textContent = display;
+          if (user.sex) option1.setAttribute('data-sex', user.sex);
+          if (user.id !== undefined && user.id !== null) option1.setAttribute('data-id', String(user.id));
+          accountablePersonSelect.appendChild(option1);
+
+          const option2 = document.createElement('option');
+          option2.value = value;
+          option2.textContent = display;
+          if (user.sex) option2.setAttribute('data-sex', user.sex);
+          if (user.id !== undefined && user.id !== null) option2.setAttribute('data-id', String(user.id));
+          actualUserSelect.appendChild(option2);
+        });
+      }
+
+      async function loadEquipmentData(search = '', status = 'All') {
+        try {
+          // Map UI status values to backend/DB values when needed
+          let queryStatus = status;
+          if (String(status).toLowerCase() === 'assigned') queryStatus = 'In Use';
+          const data = await safeServiceCall(EquipmentService.getAll(search, queryStatus));
+          if (!data || data.error) {
+            console.error('Unable to load equipment data:', data && data.error ? data.error : data);
+            if (data && typeof data.error === 'string' && data.error.toLowerCase().includes('session')) {
+              alert('Unable to load equipment. ' + data.error);
+            }
+            const tbody = document.querySelector('#equipmentTable tbody');
+            tbody.innerHTML = '<tr><td colspan="10" class="text-center">Unable to load equipment</td></tr>';
+            return;
+          }
+          
+          equipmentData = {};
+          const tbody = document.querySelector('#equipmentTable tbody');
+          tbody.innerHTML = '';
+
+          if (!Array.isArray(data) || data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="10" class="text-center">No equipment found</td></tr>';
+            return;
+          }
+
+           data.forEach((equipment, index) => {
+            equipmentData[equipment.id] = equipment;
+
+            const normalizedStatus = canonicalizeStatus(equipment.status || '');
+            const statusClass = (normalizedStatus || '').toString().toLowerCase().replace(/ /g, '-');
+            const displayStatus = ((normalizedStatus || '').toString().toLowerCase() === 'in use') ? 'Assigned' : (normalizedStatus || '');
+
+            // Determine QR code source: prefer stored qr_code_path (from DB), else fallback to generator
+            let qrSrc = '';
+            if (equipment.qr_code_path) {
+              if (/^https?:\/\//i.test(equipment.qr_code_path)) {
+                qrSrc = equipment.qr_code_path;
+              } else if (equipment.qr_code_path.startsWith('/')) {
+                qrSrc = equipment.qr_code_path;
+              } else {
+                qrSrc = '../../../../public/' + equipment.qr_code_path.replace(/^(\.\/|\/)/, '');
+              }
+            } else {
+              const prop = equipment.property_number || '';
+              qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=50x50&data=${encodeURIComponent(prop)}`;
+            }
+
+            const row = document.createElement('tr');
+            row.innerHTML = `
+              <td>${equipment.id}</td>
+              <td>${equipment.property_number}</td>
+              <td>${equipment.equipment_type || '-'}</td>
+              <td>${equipment.brand || '-'}</td>
+              <td>${equipment.year_acquired || '-'}</td>
+              <td>${equipment.actual_user || '-'}</td>
+              <td>${equipment.accountable_person || '-'}</td>
+              <td><span class="badge status-${statusClass}">${displayStatus}</span></td>
+              <td>
+                <div class="qr-code-container text-center">
+                  <a href="../../../../public/qr_view.php?id=${encodeURIComponent(equipment.id)}" target="_blank" title="Open details in new tab">
+                    <img src="${qrSrc}" 
+                         alt="QR Code" class="qr-code-img" style="width: 40px; height: 40px; cursor: pointer;">
+                  </a>
+                </div>
+              </td>
+              <td>
+                <div class="action-buttons">
+                  <button class="btn btn-sm btn-outline-primary view-details" data-id="${equipment.id}" title="View Details">
+                    <i class="fa fa-eye"></i>
+                  </button>
+                  <button class="btn btn-sm btn-outline-secondary regenerate-qr" data-id="${equipment.id}" title="Regenerate QR">
+                    <i class="fa fa-qrcode"></i>
+                  </button>
+                  <button class="btn btn-sm btn-outline-success edit-equipment" data-id="${equipment.id}" title="Edit">
+                    <i class="fa fa-edit"></i>
+                  </button>
+                  <button class="btn btn-sm btn-outline-danger delete-equipment" data-id="${equipment.id}" title="Delete">
+                    <i class="fa fa-trash"></i>
+                  </button>
+                </div>
+              </td>
+            `;
+            tbody.appendChild(row);
+          });
+
+          // Reattach event listeners
+          attachEventListeners();
+        } catch (error) {
+          console.error('Error loading equipment:', error);
+        }
+      }
+
+      function attachEventListeners() {
+        // View details
+        document.querySelectorAll('.view-details').forEach(button => {
+          button.addEventListener('click', async function() {
+            const equipmentId = this.getAttribute('data-id');
+            await viewEquipmentDetails(equipmentId);
+          });
+        });
+
+        // Edit equipment
+        document.querySelectorAll('.edit-equipment').forEach(button => {
+          button.addEventListener('click', async function() {
+            const equipmentId = this.getAttribute('data-id');
+            await editEquipment(equipmentId);
+          });
+        });
+
+        // Delete equipment
+        document.querySelectorAll('.delete-equipment').forEach(button => {
+          button.addEventListener('click', async function() {
+            const equipmentId = this.getAttribute('data-id');
+            await deleteEquipment(equipmentId);
+          });
+        });
+
+        // Regenerate QR
+        document.querySelectorAll('.regenerate-qr').forEach(button => {
+          button.addEventListener('click', async function() {
+            const equipmentId = this.getAttribute('data-id');
+            if (!confirm('Regenerate QR for this equipment? This will overwrite existing QR image.')) return;
+            const res = await safeServiceCall(EquipmentService.generateQR(equipmentId));
+            if (!res || res.error || !res.success) {
+              alert('Failed to generate QR: ' + (res && (res.error || JSON.stringify(res))));
+              return;
+            }
+            alert('QR regenerated successfully. Refreshing list.');
+            await loadEquipmentData();
+          });
+        });
+      }
+
+    // Helper to set detail fields for modal (handles inputs, textareas, selects and fallback to textContent)
+    function setDetailField(id, value) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      const val = (value === null || value === undefined) ? '' : value;
+      const tag = (el.tagName || '').toUpperCase();
+      if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') {
+        el.value = val;
+      } else {
+        el.textContent = val;
+      }
+    }
+
+    async function viewEquipmentDetails(id) {
+      const equipment = equipmentData[id];
+      if (!equipment) return;
+
+      // Populate read-only form fields using helper
+      setDetailField('detailAssetId', equipment.id || '');
+      setDetailField('detailPropertyNumber', getProp(equipment, 'property_number', 'propertyNumber') || '');
+      // support different possible server keys: office_division, office_devision, officeDevision, officeDivision
+      setDetailField('detailOfficeDevision', getProp(equipment, 'office_division', 'office_devision', 'officeDevision', 'officeDivision') || '');
+      setDetailField('detailEquipmentType', equipment.equipment_type || '');
+      setDetailField('detailYearAcquired', equipment.year_acquired || '');
+      setDetailField('detailShelfLife', equipment.shelf_life || '');
+      setDetailField('detailBrand', equipment.brand || '');
+      setDetailField('detailModel', equipment.model || '');
+      setDetailField('detailProcessor', equipment.processor || '');
+      setDetailField('detailRamSize', equipment.ram_size || '');
+      setDetailField('detailGpu', equipment.gpu || '');
+      setDetailField('detailRangeCategory', equipment.range_category || '');
+      setDetailField('detailComputerName', equipment.computer_name || '');
+      setDetailField('detailOsVersion', equipment.os_version || '');
+      setDetailField('detailOfficeProductivity', equipment.office_productivity || '');
+      setDetailField('detailEndpointProtection', equipment.endpoint_protection || '');
+      setDetailField('detailSerialNumber', equipment.serial_number || '');
+      setDetailField('detailAccountablePerson', equipment.accountable_person || '');
+      setDetailField('detailAccountableSex', equipment.accountable_sex || '');
+      setDetailField('detailAccountableEmployment', equipment.accountable_employment || '');
+      setDetailField('detailActualUser', equipment.actual_user || '');
+      setDetailField('detailActualUserSex', equipment.actual_user_sex || '');
+      setDetailField('detailActualUserEmployment', equipment.actual_user_employment || '');
+      setDetailField('detailNatureOfWork', equipment.nature_of_work || '');
+      setDetailField('detailRemarks', equipment.remarks || 'No remarks');
+
+      // Set QR code in details modal (prefer stored path)
+      try {
+        let detailQrSrc = '';
+        if (equipment.qr_code_path) {
+          if (/^https?:\/\//i.test(equipment.qr_code_path)) {
+            detailQrSrc = equipment.qr_code_path;
+          } else if (equipment.qr_code_path.startsWith('/')) {
+            detailQrSrc = equipment.qr_code_path;
+          } else {
+            detailQrSrc = '../../../../public/' + equipment.qr_code_path.replace(/^(\.\/|\/)*/, '');
+          }
+        } else {
+          const publicUrl = '../../../../public/qr_view.php?id=' + encodeURIComponent(equipment.id);
+          detailQrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(publicUrl)}`;
+        }
+        const qrImg = document.getElementById('detailQrCode');
+        if (qrImg) {
+          qrImg.setAttribute('src', detailQrSrc);
+          qrImg.style.cursor = 'pointer';
+          qrImg.onclick = function() {
+            window.open('../../../../public/qr_view.php?id=' + encodeURIComponent(equipment.id), '_blank');
+          };
+        }
+      } catch (e) {
+        console.warn('Failed to set detail QR image', e);
+      }
+
+      document.getElementById('equipmentDetailsModal').style.display = 'flex';
+    }
+
+    async function editEquipment(id) {
+        const equipment = equipmentData[id];
+        if (!equipment) return;
+
+        // ensure users are loaded so selects exist and have options
+        if (!usersData || usersData.length === 0) {
+          await loadUsers();
+        }
+
+        // Populate form with equipment data
+        // support different possible server keys
+        document.getElementById('officeDevision').value = getProp(equipment, 'office_division', 'office_devision', 'officeDevision', 'officeDivision') || '';
+        document.getElementById('equipmentType').value = equipment.equipment_type || '';
+        document.getElementById('yearAcquired').value = equipment.year_acquired || '';
+        document.getElementById('shelfLife').value = equipment.shelf_life || '';
+        document.getElementById('brand').value = equipment.brand || '';
+        document.getElementById('model').value = equipment.model || '';
+        document.getElementById('processor').value = equipment.processor || '';
+        document.getElementById('ramSize').value = equipment.ram_size || '';
+        document.getElementById('gpu').value = equipment.gpu || '';
+        document.getElementById('osVersion').value = equipment.os_version || '';
+        document.getElementById('officeProductivity').value = equipment.office_productivity || '';
+        document.getElementById('endpointProtection').value = equipment.endpoint_protection || '';
+        document.getElementById('computerName').value = equipment.computer_name || '';
+        document.getElementById('serialNumber').value = equipment.serial_number || '';
+        document.getElementById('propertyNumber').value = equipment.property_number || '';
+
+        // Set accountable person - try matching by full_name first, then by id (if equipment contains accountable_person_id)
+        const accountableSelect = document.getElementById('accountablePerson');
+        if (accountableSelect) {
+          const byName = Array.from(accountableSelect.options).find(opt => opt.value === (equipment.accountable_person || ''));
+          const byId = equipment.accountable_person_id ? Array.from(accountableSelect.options).find(opt => opt.getAttribute('data-id') === String(equipment.accountable_person_id)) : null;
+          if (byName) accountableSelect.value = byName.value;
+          else if (byId) accountableSelect.value = byId.value;
+          else accountableSelect.value = equipment.accountable_person || '';
+        }
+
+        // Set actual user similarly
+        const actualSelect = document.getElementById('actualUser');
+        if (actualSelect) {
+          const byName = Array.from(actualSelect.options).find(opt => opt.value === (equipment.actual_user || ''));
+          const byId = equipment.actual_user_id ? Array.from(actualSelect.options).find(opt => opt.getAttribute('data-id') === String(equipment.actual_user_id)) : null;
+          if (byName) actualSelect.value = byName.value;
+          else if (byId) actualSelect.value = byId.value;
+          else actualSelect.value = equipment.actual_user || '';
+        }
+
+        // Continue populating remaining fields
+        document.getElementById('accountableSex').value = equipment.accountable_sex || '';
+        document.getElementById('accountableEmployment').value = equipment.accountable_employment || '';
+        document.getElementById('actualUserSex').value = equipment.actual_user_sex || '';
+        document.getElementById('actualUserEmployment').value = equipment.actual_user_employment || '';
+        document.getElementById('natureOfWork').value = equipment.nature_of_work || '';
+        document.getElementById('remarks').value = equipment.remarks || '';
+        // Populate the status select so edits include the current status
+        const statusSelect = document.getElementById('status');
+        if (statusSelect) {
+          // Map DB value 'In Use' to UI label 'Assigned'
+          const normalizedStatus = canonicalizeStatus(equipment.status || 'Assigned');
+          if ((normalizedStatus || '').toString().toLowerCase() === 'in use') {
+            statusSelect.value = 'Assigned';
+          } else {
+            const match = Array.from(statusSelect.options).find(opt => (opt.value || '').toLowerCase() === String(normalizedStatus || '').toLowerCase());
+            statusSelect.value = match ? match.value : 'Assigned';
+          }
+        }
+
+        // Change modal title and button
+        document.querySelector('#addDeviceModal .modal-title').textContent = 'Edit Equipment';
+        document.getElementById('addDeviceBtn').textContent = 'Update Equipment';
+        document.getElementById('addDeviceBtn').setAttribute('data-edit-id', id);
+
+        document.getElementById('addDeviceModal').style.display = 'flex';
+      }
+
+      async function deleteEquipment(id) {
+        if (!confirm('Are you sure you want to delete this equipment?')) return;
+
+        const result = await safeServiceCall(EquipmentService.delete(id));
+        if (!result || result.error) {
+          alert('Error deleting equipment: ' + (result && result.error ? result.error : 'Unknown error'));
+          return;
+        }
+
+        if (result.success || result.deleted || result.id) {
+          alert('Equipment deleted successfully!');
+          await loadEquipmentData();
+        } else {
+          alert('Error deleting equipment: ' + (result.error || 'Unknown error'));
+        }
+      }
+
+      // Close modal functionality
+      document.getElementById('closeModal').addEventListener('click', function() {
+        document.getElementById('equipmentDetailsModal').style.display = 'none';
+      });
+
+      document.getElementById('equipmentDetailsModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+          this.style.display = 'none';
+        }
+      });
+
+      // Add Device Modal functionality
+      document.getElementById('addNewDeviceBtn').addEventListener('click', async function() {
+        // ensure users are loaded before showing modal so dropdowns are populated
+        if (!usersData || usersData.length === 0) {
+          await loadUsers();
+        } else {
+          // refresh dropdowns in case usersData changed
+          populateUserDropdowns();
+        }
+
+        document.getElementById('addDeviceForm').reset();
+        document.querySelector('#addDeviceModal .modal-title').textContent = 'Add New Equipment';
+        document.getElementById('addDeviceBtn').textContent = 'Add Equipment';
+        document.getElementById('addDeviceBtn').removeAttribute('data-edit-id');
+        document.getElementById('addDeviceModal').style.display = 'flex';
+      });
+
+      document.getElementById('closeAddDeviceModal').addEventListener('click', function() {
+        document.getElementById('addDeviceModal').style.display = 'none';
+      });
+
+      document.getElementById('cancelAddDeviceBtn').addEventListener('click', function() {
+        document.getElementById('addDeviceModal').style.display = 'none';
+      });
+
+      document.getElementById('addDeviceModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+          this.style.display = 'none';
+        }
+      });
+
+      function canonicalizeStatus(status) {
+        const raw = (status || '').toString().trim().toLowerCase();
+        if (raw === 'assigned' || raw === 'in use') return 'In Use';
+        if (raw === 'available') return 'Available';
+        if (raw === 'under maintenance') return 'Under Maintenance';
+        if (raw === 'damaged') return 'Damaged';
+        if (raw === 'out of service') return 'Out of Service';
+        return status;
+      }
+
+      // Add/Update equipment functionality
+      document.getElementById('addDeviceBtn').addEventListener('click', async function() {
+        // collect values from form (unchanged)
+        const formData = {
+          officeDevision: document.getElementById('officeDevision').value,
+          equipmentType: document.getElementById('equipmentType').value,
+          yearAcquired: document.getElementById('yearAcquired').value,
+          shelfLife: document.getElementById('shelfLife').value,
+          brand: document.getElementById('brand').value,
+          model: document.getElementById('model').value,
+          processor: document.getElementById('processor').value,
+          ramSize: document.getElementById('ramSize').value,
+          gpu: document.getElementById('gpu').value,
+          osVersion: document.getElementById('osVersion').value,
+          officeProductivity: document.getElementById('officeProductivity').value,
+          endpointProtection: document.getElementById('endpointProtection').value,
+          computerName: document.getElementById('computerName').value,
+          serialNumber: document.getElementById('serialNumber').value,
+          propertyNumber: document.getElementById('propertyNumber').value,
+          accountablePerson: document.getElementById('accountablePerson').value,
+          accountableSex: document.getElementById('accountableSex').value,
+          accountableEmployment: document.getElementById('accountableEmployment').value,
+          actualUser: document.getElementById('actualUser').value,
+          actualUserSex: document.getElementById('actualUserSex').value,
+          actualUserEmployment: document.getElementById('actualUserEmployment').value,
+          natureOfWork: document.getElementById('natureOfWork').value,
+          remarks: document.getElementById('remarks').value,
+          status: (document.getElementById('status') ? document.getElementById('status').value : 'Assigned')
+        };
+
+        // simple validation (keep existing requirement)
+        if (!formData.propertyNumber) {
+          alert('Property Number is required!');
+          return;
+        }
+
+        const normalizedStatus = canonicalizeStatus(formData.status || 'Assigned');
+        const actualUserValue = (formData.actualUser || '').toString().trim();
+        if (normalizedStatus === 'In Use' && actualUserValue === '') {
+          alert('Actual user is required when status is Assigned.');
+          return;
+        }
+
+        // normalize/mapping to expected backend keys (snake_case)
+        const payload = {
+          office_division: formData.officeDevision || formData.office_division || formData.officeDevision || '',
+          equipment_type: formData.equipmentType || '',
+          year_acquired: formData.yearAcquired || '',
+          shelf_life: formData.shelfLife || '',
+          brand: formData.brand || '',
+          model: formData.model || '',
+          processor: formData.processor || '',
+          ram_size: formData.ramSize || '',
+          gpu: formData.gpu || '',
+          os_version: formData.osVersion || '',
+          office_productivity: formData.officeProductivity || '',
+          endpoint_protection: formData.endpointProtection || '',
+          computer_name: formData.computerName || '',
+          serial_number: formData.serialNumber || '',
+          property_number: formData.propertyNumber || '',
+          accountable_person: formData.accountablePerson || '',
+          accountable_sex: formData.accountableSex || '',
+          accountable_employment: formData.accountableEmployment || '',
+          actual_user: actualUserValue,
+          actual_user_sex: formData.actualUserSex || '',
+          actual_user_employment: formData.actualUserEmployment || '',
+          nature_of_work: formData.natureOfWork || '',
+          remarks: formData.remarks || '',
+          status: normalizedStatus || 'In Use'
+        };
+
+        const editId = this.getAttribute('data-edit-id');
+        let result = null;
+        try {
+          console.log('Sending payload for ' + (editId ? ('update id=' + editId) : 'create') + ':', payload);
+        } catch (e) { console.warn('Failed to log payload', e); }
+
+        if (editId) {
+          result = await safeServiceCall(EquipmentService.update(editId, payload));
+        } else {
+          result = await safeServiceCall(EquipmentService.create(payload));
+        }
+
+        if (!result || result.error) {
+          alert('Error: ' + (result && result.error ? result.error : 'Unknown error'));
+          return;
+        }
+
+        if (result.success || result.id) {
+          // Debug: show server's saved object to confirm shelf_life persisted
+          try {
+            console.log('Equipment save result:', result);
+            if (result.saved) {
+              console.log('Saved object:', result.saved);
+              console.log('Saved shelf_life:', result.saved.shelf_life);
+              console.log('Saved status:', result.saved.status);
+            }
+          } catch (e) { console.warn('Logging response failed', e); }
+
+          // Notify user and show the status that the server reports as saved
+          if (result.saved && result.saved.status !== undefined) {
+            alert((editId ? 'Equipment updated successfully!\n' : 'Equipment added successfully!\n') + 'Status saved as: ' + result.saved.status);
+          } else {
+            alert(editId ? 'Equipment updated successfully!' : 'Equipment added successfully!');
+          }
+          document.getElementById('addDeviceModal').style.display = 'none';
+          await loadEquipmentData();
+        } else {
+          alert('Error: ' + (result.error || 'Unknown error'));
+        }
+      });
+ 
+      // Search and filter functionality
+      const searchInput = document.getElementById('searchInput');
+      const statusFilter = document.getElementById('statusFilter');
+      const clearFiltersBtn = document.getElementById('clearFiltersBtn');
+ 
+      if (searchInput) {
+        searchInput.addEventListener('input', debounce(async function() {
+          await loadEquipmentData(this.value, statusFilter.value);
+        }, 300));
+      }
+ 
+      if (statusFilter) {
+        statusFilter.addEventListener('change', async function() {
+          await loadEquipmentData(searchInput.value, this.value);
+        });
+      }
+ 
+      if (clearFiltersBtn) {
+        clearFiltersBtn.addEventListener('click', async function() {
+          searchInput.value = '';
+          statusFilter.value = 'All';
+          await loadEquipmentData();
+        });
+      }
+ 
+      // Debounce helper
+      function debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+          const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+          };
+          clearTimeout(timeout);
+          timeout = setTimeout(later, wait);
+        };
+      }
+ 
+      // Print Equipment List Button Event
+      document.getElementById('printEquipmentListBtn').addEventListener('click', function() {
+        printEquipmentList();
+      });
+      
+      function printEquipmentList() {
+        const now = new Date();
+        const currentDate = now.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+        const currentTime = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+        const statusFilterEl = document.getElementById('statusFilter');
+        const filterValue = statusFilterEl ? (statusFilterEl.value || 'All') : 'All';
+
+        document.getElementById('footerDate').textContent = `${currentDate} at ${currentTime}`;
+        const footerFilterEl = document.getElementById('footerFilter');
+        if (footerFilterEl) footerFilterEl.textContent = filterValue;
+
+        const printTableBody = document.getElementById('printTableBody');
+        printTableBody.innerHTML = '';
+
+        const items = Object.values(equipmentData || {});
+        let totalCount = 0;
+
+        if (!items || items.length === 0) {
+          printTableBody.innerHTML = '<tr><td colspan="19" style="text-align:center;">No equipment to print</td></tr>';
+        } else {
+          const rows = [];
+          items.forEach(eq => {
+            // show only loaded/visible items (equipmentData holds loaded results based on filters)
+            const id = eq.id || '';
+            const prop = eq.property_number || '';
+            const type = eq.equipment_type || '';
+            const brandModel = ((eq.brand || '') + ' / ' + (eq.model || '')).replace(/^\s*\/\s*$/, '');
+            const year = eq.year_acquired || '';
+            const office = getProp(eq, 'office_division', 'office_devision', 'officeDevision', 'officeDivision') || '';
+            const accountable = eq.accountable_person || '';
+            const accountable_sex = eq.accountable_sex || '';
+            const accountable_employment = eq.accountable_employment || '';
+            const actual = eq.actual_user || '';
+            const actual_sex = eq.actual_user_sex || '';
+            const actual_employment = eq.actual_user_employment || '';
+            const nature = eq.nature_of_work || '';
+            const specs = [(eq.processor || ''), (eq.ram_size || ''), (eq.gpu || '')].filter(Boolean).join(' / ');
+            const software = [(eq.office_productivity || ''), (eq.endpoint_protection || '')].filter(Boolean).join(' / ');
+            const serial = eq.serial_number || '';
+            const shelf = eq.shelf_life || '';
+            const statusRaw = canonicalizeStatus((eq.status || '').toString());
+            const statusDisplay = statusRaw.toLowerCase() === 'in use' ? 'Assigned' : statusRaw;
+            const remarks = eq.remarks || '';
+
+            rows.push(`<tr>
+              <td>${escapeHtml(id)}</td>
+              <td>${escapeHtml(prop)}</td>
+              <td>${escapeHtml(type)}</td>
+              <td>${escapeHtml(brandModel)}</td>
+              <td>${escapeHtml(year)}</td>
+              <td>${escapeHtml(office)}</td>
+              <td>${escapeHtml(accountable)}</td>
+              <td>${escapeHtml(accountable_sex)}</td>
+              <td>${escapeHtml(accountable_employment)}</td>
+              <td>${escapeHtml(actual)}</td>
+              <td>${escapeHtml(actual_sex)}</td>
+              <td>${escapeHtml(actual_employment)}</td>
+              <td>${escapeHtml(nature)}</td>
+              <td>${escapeHtml(specs)}</td>
+              <td>${escapeHtml(software)}</td>
+              <td>${escapeHtml(serial)}</td>
+              <td>${escapeHtml(shelf)}</td>
+              <td>${escapeHtml(statusDisplay)}</td>
+              <td>${escapeHtml(remarks)}</td>
+            </tr>`);
+
+            totalCount++;
+          });
+
+          printTableBody.innerHTML = rows.join('\n');
+        }
+
+        document.getElementById('totalCount').textContent = totalCount;
+
+        // Show and print
+        const printContainer = document.getElementById('printContainer');
+        printContainer.style.display = 'block';
+        setTimeout(function() {
+          window.print();
+          setTimeout(function() { printContainer.style.display = 'none'; }, 200);
+        }, 150);
+      }
+
+      // small helper to avoid XSS-injecting innerHTML
+      function escapeHtml(str) {
+        if (str === null || str === undefined) return '';
+        return String(str)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#039;');
+      }
+      
+      // Print QR Codes functionality
+      const printQRBtn = document.getElementById('printQRCodesBtn');
+      if (printQRBtn) {
+        printQRBtn.addEventListener('click', function() {
+          printQRCodes();
+        });
+
+      }
+      
+      function printQRCodes() {
+        // Create a new window for printing QR codes
+        const printWindow = window.open('', '_blank');
+        
+        // Get equipment data from table
+        const equipmentTable = document.getElementById('equipmentTable');
+        const rows = equipmentTable.querySelector('tbody').querySelectorAll('tr');
+        const qrEquipmentData = [];
+        
+        rows.forEach(function(row) {
+          if (row.style.display !== 'none') {
+            const cells = row.querySelectorAll('td');
+            if (cells.length > 0) {
+              // try to read QR image src from the QR cell (usually cell index 8)
+              const img = row.querySelector('img.qr-code-img');
+              const qrSrc = img ? img.getAttribute('src') : null;
+              qrEquipmentData.push({
+                propertyNumber: cells[1].textContent.trim(),
+                qrSrc: qrSrc
+              });
+            }
+          }
+        });
+        
+        printWindow.document.write(`
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <title>QR Codes - CENRO NASIPIT</title>
+            <style>
+              @page {
+                size: letter portrait;
+                margin: 0.4in;
+              }
+              body {
+                font-family: "Times New Roman", Times, serif;
+                margin: 0;
+                padding: 0;
+                background: white;
+              }
+              .qr-grid {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 0.2in;
+                margin: 0;
+              }
+              .qr-card {
+                border: 2px solid #2c5530;
+                padding: 0.08in;
+                text-align: center;
+                background: white;
+                page-break-inside: avoid;
+                width: 100%;
+                height: 3.25in;
+                box-sizing: border-box;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+              }
+              .header {
+                text-align: center;
+                margin-bottom: 0.06in;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 0.08in;
+              }
+              .denr-logo {
+                width: 50px;
+                height: 50px;
+                object-fit: contain;
+              }
+              .header-text {
+                flex: 1;
+                text-align: center;
+              }
+              .header h3 {
+                color: #000;
+                margin: 2px 0;
+                font-size: 12px;
+                line-height: 1.1;
+                font-weight: bold;
+                font-family: "Times New Roman", Times, serif;
+              }
+              .header h4 {
+                color: #000;
+                margin: 1px 0;
+                font-size: 10px;
+                line-height: 1.1;
+                font-weight: normal;
+                font-family: "Times New Roman", Times, serif;
+              }
+              .property-title {
+                background: #2c5530;
+                color: white;
+                padding: 4px;
+                margin: 0.06in 0 0.08in 0;
+                font-weight: bold;
+                font-size: 11px;
+                letter-spacing: 1px;
+                width: 100%;
+                font-family: "Times New Roman", Times, serif;
+              }
+              .qr-code {
+                margin: 0.05in 0;
+              }
+              .qr-code img {
+                width: 132px;
+                height: 132px;
+                border: 1px solid #ccc;
+              }
+              .property-number {
+                font-weight: bold;
+                font-size: 13px;
+                color: #2c5530;
+                margin-top: 0.08in;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+                font-family: "Times New Roman", Times, serif;
+              }
+              @media print {
+                html, body {
+                  width: 100%;
+                  height: auto;
+                }
+                body {
+                  margin: 0;
+                  padding: 0;
+                  -webkit-print-color-adjust: exact;
+                  print-color-adjust: exact;
+                }
+                .qr-grid { gap: 0.2in; }
+                .qr-card { 
+                  page-break-inside: avoid;
+                  break-inside: avoid;
+                  margin-bottom: 0;
+                }
+              }
+            </style>
+          </head>
+          <body>
+            <div class="qr-grid">
+        `);
+        
+        // Generate QR code cards
+        qrEquipmentData.forEach(equipment => {
+          printWindow.document.write(`
+            <div class="qr-card">
+              <div class="header">
+                <img src="../../../../public/assets/images/denr-logo.png" alt="DENR Logo" class="denr-logo">
+                <div class="header-text">
+                  <h3>Department of Environment and Natural Resources</h3>
+                  <h4>Community Environment and Natural Resources Office</h4>
+                  <h4>CENRO Nasipit, Agusan del Norte</h4>
+                </div>
+              </div>
+              
+              <div class="property-title">RP GOVERNMENT PROPERTY</div>
+              
+              <div class="qr-code">
+                ${ (equipment.qrSrc && !String(equipment.qrSrc).toLowerCase().includes('api.qrserver.com')) 
+                    ? ('<img src="' + equipment.qrSrc + '" alt="QR Code">')
+                    : ('<div style="width:150px;height:150px;border:1px solid #ccc;display:flex;align-items:center;justify-content:center;color:#666">No QR</div>') }
+              </div>
+              
+              <div class="property-number">${equipment.propertyNumber}</div>
+            </div>
+          `);
+        });
+        
+        printWindow.document.write(`
+            </div>
+          </body>
+          </html>
+        `);
+        
+        printWindow.document.close();
+        
+        // Wait for images to load before printing
+        setTimeout(() => {
+          printWindow.print();
+        }, 1000);
+      }
+    });
+
+    // Global functions for modal actions
+    function closeEquipmentDetails() {
+      document.getElementById('equipmentDetailsModal').style.display = 'none';
+    }
+
+    function printEquipmentDetails() {
+      const modal = document.getElementById('equipmentDetailsModal');
+      const modalStyle = modal.style.display;
+      modal.style.display = 'none';
+      
+      setTimeout(() => {
+        window.print();
+        modal.style.display = modalStyle;
+      }, 100);
+    }
+
+    function printQRCode() {
+      alert('Print QR Code functionality: This would generate and print the QR code for this specific equipment item.');
+    }
