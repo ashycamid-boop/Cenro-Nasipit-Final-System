@@ -1,0 +1,137 @@
+﻿/* Style inputs with light background; admin can edit fields here */
+input,
+textarea,
+select {
+  background-color: #f8f9fa !important;
+}
+
+/* Increase main content readability: enlarge base font and override tiny inline sizes */
+.main .main-content {
+  font-size: 14px;
+}
+
+.main .main-content table,
+.main .main-content td,
+.main .main-content th,
+.main .main-content input,
+.main .main-content select,
+.main .main-content textarea,
+.main .main-content .signature-box {
+  font-size: 14px !important;
+}
+
+.main .main-content .container-fluid {
+  max-width: 1100px;
+}
+
+/* Shift Back button left so it does not align with centered main content */
+.back-left {
+  position: relative;
+  left: -150px;
+}
+
+/* On narrow screens, keep Back button inside viewport */
+@media (max-width: 768px) {
+  .back-left {
+    left: 0;
+  }
+}
+
+@media (max-width: 991.98px) {
+  .admin-edit-requests-ongoing-page .sidebar {
+    width: min(320px, calc(100vw - 18px));
+  }
+
+  .admin-edit-requests-ongoing-page .sidebar-logo {
+    gap: 14px;
+    padding: 20px 18px 10px;
+  }
+
+  .admin-edit-requests-ongoing-page .sidebar-logo img {
+    width: 52px;
+    height: 52px;
+  }
+
+  .admin-edit-requests-ongoing-page .sidebar-logo span {
+    font-size: 1.55rem;
+  }
+
+  .admin-edit-requests-ongoing-page .sidebar-role {
+    padding: 18px 0;
+    font-size: 1.06rem;
+  }
+
+  .admin-edit-requests-ongoing-page .sidebar-nav li,
+  .admin-edit-requests-ongoing-page .sidebar-nav li:not(.dropdown),
+  .admin-edit-requests-ongoing-page .sidebar-nav li.dropdown > a.dropdown-toggle {
+    padding: 13px 24px;
+    font-size: 1.08rem;
+    gap: 12px;
+  }
+
+  .admin-edit-requests-ongoing-page .sidebar-nav li i {
+    width: 22px;
+    font-size: 1rem;
+  }
+
+  .admin-edit-requests-ongoing-page .sidebar-nav li.dropdown .dropdown-menu li {
+    padding: 11px 24px 11px 50px;
+    font-size: 1rem;
+  }
+
+  .admin-edit-requests-ongoing-page .sidebar-nav li.dropdown .dropdown-menu li::before {
+    left: 33px;
+  }
+
+  .admin-edit-requests-ongoing-page .mobile-nav-toggle {
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+  }
+
+  .admin-edit-requests-ongoing-page .mobile-nav-toggle i {
+    font-size: 1.18rem;
+  }
+
+  .admin-edit-requests-ongoing-page .topbar-card {
+    padding: 16px 18px;
+    min-height: 78px;
+  }
+
+  .admin-edit-requests-ongoing-page .topbar-title {
+    font-size: 1.32rem;
+  }
+
+  .admin-edit-requests-ongoing-page .topbar-profile-img {
+    width: 40px;
+    height: 40px;
+  }
+}
+
+@media (max-width: 600px) {
+  .admin-edit-requests-ongoing-page .topbar-card {
+    padding: 14px 16px;
+  }
+
+  .admin-edit-requests-ongoing-page .topbar-profile-img {
+    width: 40px;
+    height: 40px;
+  }
+
+  .admin-edit-requests-ongoing-page .topbar-profile-info {
+    display: flex !important;
+    gap: 2px;
+  }
+
+  .admin-edit-requests-ongoing-page .topbar-profile-info .name {
+    font-size: 0.9rem !important;
+  }
+
+  .admin-edit-requests-ongoing-page .topbar-profile-info .role {
+    font-size: 0.8rem !important;
+  }
+
+  .admin-edit-requests-ongoing-page .topbar-title {
+    font-size: 1.28rem;
+  }
+}

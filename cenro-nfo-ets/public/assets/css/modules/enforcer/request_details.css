@@ -1,0 +1,91 @@
+/* Keep request details form view-only */
+input,
+textarea,
+select {
+  background-color: #f8f9fa !important;
+  pointer-events: none !important;
+}
+
+input[type="file"] {
+  opacity: 0.5 !important;
+  pointer-events: none !important;
+}
+
+@media (max-width: 575.98px) {
+  .main .main-content .container-fluid {
+    max-width: none;
+    padding: 0.5rem !important;
+  }
+
+  .row.mb-3 .d-flex {
+    flex-direction: column;
+    align-items: stretch !important;
+    gap: 0.5rem;
+  }
+
+  .row.mb-3 .btn {
+    width: 100%;
+  }
+}
+
+
+.service-request-form-page .container-fluid {
+  width: 100%;
+  max-width: none;
+}
+
+.service-request-form-page .main-content {
+  padding: 20px;
+}
+
+.service-request-form-page .service-request-sheet {
+  width: 100%;
+  border-radius: 18px;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
+}
+
+.service-request-form-page #viewForm {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.service-request-form-page .row.mb-3 .d-flex {
+  gap: 0.75rem;
+}
+
+@media (max-width: 991.98px) {
+  .service-request-form-page .main-content {
+    padding: 0;
+  }
+
+  .service-request-form-page .container-fluid {
+    padding: 0.75rem !important;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .service-request-form-page .container-fluid {
+    padding: 0.4rem !important;
+  }
+
+  .service-request-form-page .topbar-title {
+    font-size: 1.05rem;
+  }
+
+  .service-request-form-page .row.mb-3 .d-flex {
+    flex-direction: column;
+    align-items: stretch !important;
+  }
+
+  .service-request-form-page .row.mb-3 .btn {
+    width: 100%;
+  }
+
+  .service-request-form-page .service-request-sheet {
+    min-width: 760px;
+    width: 760px;
+    max-width: none !important;
+    border-radius: 14px;
+  }
+}

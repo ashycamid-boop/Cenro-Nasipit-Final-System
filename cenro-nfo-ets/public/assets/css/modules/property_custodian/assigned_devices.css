@@ -1,0 +1,11 @@
+.profile-photo {
+  width: 140px !important;
+  height: 140px !important;
+  object-fit: cover !important;
+  display: inline-block;
+  margin-top: -12px;
+}
+
+.profile-photo-container {
+  text-align: center;
+}
