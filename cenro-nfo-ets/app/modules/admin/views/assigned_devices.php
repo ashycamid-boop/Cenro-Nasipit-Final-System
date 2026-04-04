@@ -4,7 +4,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Assigned Devices</title>
+  <title>Assigned Devices</title>
   <?php require_once __DIR__ . '/../../../views/partials/favicon.php'; ?>
   <?php require_once __DIR__ . '/../../../views/partials/spot_report_badge.php'; ?>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -15,6 +15,25 @@
   <link href="https://fonts.googleapis.com/css?family=Fredoka+One:400&display=swap" rel="stylesheet">
 </head>
 <body>
+  <?php
+  $scriptName = str_replace('\\', '/', $_SERVER['SCRIPT_NAME'] ?? '');
+  $baseUrl = '';
+
+  if ($scriptName !== '') {
+    $appPos = strpos($scriptName, '/app/');
+
+    if ($appPos !== false) {
+      $baseUrl = substr($scriptName, 0, $appPos);
+    } else {
+      $baseUrl = rtrim(str_replace('\\', '/', dirname($scriptName)), '/.');
+    }
+  }
+
+  $assetBaseUrl = ($baseUrl !== '' ? $baseUrl : '') . '/public/assets/images';
+  $uploadBaseUrl = $baseUrl !== '' ? $baseUrl . '/' : '/';
+  $assetBaseUrl = preg_replace('#(?<!:)/{2,}#', '/', $assetBaseUrl);
+  $uploadBaseUrl = preg_replace('#(?<!:)/{2,}#', '/', $uploadBaseUrl);
+  ?>
   <div class="layout">
     <nav class="sidebar" role="navigation" aria-label="Main sidebar">
       <div class="sidebar-logo">
@@ -74,7 +93,7 @@
             <div class="card-body">
               <div class="row align-items-center mb-4 header-logos">
                 <div class="col-md-2">
-                  <img src="/prototype/public/assets/images/denr-logo.png" alt="DENR Logo" class="header-logo-image">
+                  <img src="<?php echo htmlspecialchars($assetBaseUrl . '/denr-logo.png', ENT_QUOTES, 'UTF-8'); ?>" alt="DENR Logo" class="header-logo-image">
                 </div>
                 <div class="col-md-8 text-center">
                   <h6 class="mb-0"><strong>Department of Environment and Natural Resources</strong></h6>
@@ -83,7 +102,7 @@
                   <p class="mb-0"><strong>CENRO Nasipit, Agusan del Norte</strong></p>
                 </div>
                 <div class="col-md-2 text-end">
-                  <img src="/prototype/public/assets/images/bagong-pilipinas-logo.png" alt="Bagong Pilipinas Logo" class="header-logo-image">
+                  <img src="<?php echo htmlspecialchars($assetBaseUrl . '/bagong-pilipinas-logo.png', ENT_QUOTES, 'UTF-8'); ?>" alt="Bagong Pilipinas Logo" class="header-logo-image">
                 </div>
               </div>
 
@@ -100,13 +119,13 @@
               $displayContact = $user['contact_number'] ?? '';
 
               // build avatar src
-              $defaultAvatar = '/prototype/public/assets/images/default-avatar.png';
+              $defaultAvatar = $assetBaseUrl . '/default-avatar.png';
               $imgSrc = $defaultAvatar;
               if (!empty($user['profile_picture'])) {
                 $stored = ltrim($user['profile_picture'], '/');
                 $fsPath = __DIR__ . '/../../../../' . $stored;
                 if (file_exists($fsPath)) {
-                  $imgSrc = '/prototype/' . $stored;
+                  $imgSrc = $uploadBaseUrl . $stored;
                 }
               }
               ?>

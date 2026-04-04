@@ -1,6 +1,12 @@
 document.addEventListener('DOMContentLoaded', function() {
   const passwordField = document.getElementById('password');
   const confirmPasswordField = document.getElementById('confirmPassword');
+  const addUserForm = document.getElementById('addUserForm');
+  const emailField = document.getElementById('email');
+  const contactNumberField = document.getElementById('contactNumber');
+  initializeAutoCapitalizeFields();
+  initializeEmailDuplicateCheck(addUserForm, emailField);
+  initializeContactNumberDuplicateCheck(addUserForm, contactNumberField);
 
   // 1. Password Strength Validation (Mix of Letters and Numbers)
   passwordField.addEventListener('input', function() {
@@ -49,6 +55,260 @@ document.addEventListener('DOMContentLoaded', function() {
   initializeProfileDropdown();
   initializeProfileCropper();
 });
+
+function initializeAutoCapitalizeFields() {
+  const fieldIds = ['firstName', 'middleName', 'lastName', 'suffix', 'position'];
+
+  fieldIds.forEach(function(fieldId) {
+    const input = document.getElementById(fieldId);
+
+    if (!input) return;
+
+    input.addEventListener('input', function() {
+      const start = input.selectionStart;
+      const end = input.selectionEnd;
+      const transformedValue = capitalizeWords(input.value);
+
+      if (transformedValue !== input.value) {
+        input.value = transformedValue;
+
+        if (typeof start === 'number' && typeof end === 'number') {
+          input.setSelectionRange(start, end);
+        }
+      }
+    });
+  });
+}
+
+function capitalizeWords(value) {
+  return value.replace(/(^|[\s\-'])[a-z]/g, function(match) {
+    return match.toUpperCase();
+  });
+}
+
+function initializeEmailDuplicateCheck(form, input, excludeUserId) {
+  if (!form || !input) return;
+
+  let debounceTimer = null;
+  let requestSequence = 0;
+
+  input.addEventListener('input', function() {
+    clearTimeout(debounceTimer);
+    clearEmailDuplicateState(input);
+
+    debounceTimer = setTimeout(function() {
+      validateEmailUniqueness(input, excludeUserId, ++requestSequence);
+    }, 350);
+  });
+
+  input.addEventListener('blur', function() {
+    clearTimeout(debounceTimer);
+    validateEmailUniqueness(input, excludeUserId, ++requestSequence);
+  });
+
+  form.addEventListener('submit', async function(event) {
+    const isUnique = await validateEmailUniqueness(input, excludeUserId, ++requestSequence);
+
+    if (!isUnique) {
+      event.preventDefault();
+      input.focus();
+    }
+  });
+}
+
+async function validateEmailUniqueness(input, excludeUserId, requestSequence) {
+  const normalized = normalizeEmail(input.value);
+
+  if (normalized === '' || !isValidEmailFormat(normalized)) {
+    clearEmailDuplicateState(input);
+    return true;
+  }
+
+  try {
+    const query = new URLSearchParams({
+      email: input.value
+    });
+
+    if (excludeUserId) {
+      query.set('exclude_user_id', String(excludeUserId));
+    }
+
+    const response = await fetch(`../../../api/check_email.php?${query.toString()}`, {
+      headers: {
+        'X-Requested-With': 'XMLHttpRequest'
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error('Unable to verify email.');
+    }
+
+    const result = await response.json();
+
+    if (requestSequence !== undefined) {
+      const currentNormalized = normalizeEmail(input.value);
+
+      if (currentNormalized !== normalized) {
+        return !result.exists;
+      }
+    }
+
+    if (result.exists) {
+      showEmailDuplicateState(input, 'Email already exists.');
+      return false;
+    }
+
+    clearEmailDuplicateState(input);
+    return true;
+  } catch (error) {
+    clearEmailDuplicateState(input);
+    return true;
+  }
+}
+
+function normalizeEmail(value) {
+  return (value || '').trim().toLowerCase();
+}
+
+function isValidEmailFormat(value) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+}
+
+function showEmailDuplicateState(input, message) {
+  const helpText = getFieldHelpText(input);
+
+  input.setCustomValidity(message);
+  input.classList.add('is-invalid');
+  input.classList.remove('is-valid');
+
+  if (helpText) {
+    helpText.innerHTML = `<span class="text-danger"><i class="fa fa-exclamation-triangle me-1"></i>${message}</span>`;
+  }
+}
+
+function clearEmailDuplicateState(input) {
+  const helpText = getFieldHelpText(input);
+
+  input.setCustomValidity('');
+  input.classList.remove('is-invalid');
+
+  if (helpText) {
+    helpText.innerHTML = '';
+  }
+}
+
+function initializeContactNumberDuplicateCheck(form, input, excludeUserId) {
+  if (!form || !input) return;
+
+  let debounceTimer = null;
+  let requestSequence = 0;
+
+  input.addEventListener('input', function() {
+    clearTimeout(debounceTimer);
+    clearContactNumberDuplicateState(input);
+
+    debounceTimer = setTimeout(function() {
+      validateContactNumberUniqueness(input, excludeUserId, ++requestSequence);
+    }, 350);
+  });
+
+  input.addEventListener('blur', function() {
+    clearTimeout(debounceTimer);
+    validateContactNumberUniqueness(input, excludeUserId, ++requestSequence);
+  });
+
+  form.addEventListener('submit', async function(event) {
+    const isUnique = await validateContactNumberUniqueness(input, excludeUserId, ++requestSequence);
+
+    if (!isUnique) {
+      event.preventDefault();
+      input.focus();
+    }
+  });
+}
+
+async function validateContactNumberUniqueness(input, excludeUserId, requestSequence) {
+  const normalized = normalizeContactNumber(input.value);
+
+  if (normalized === '' || normalized.length < 7) {
+    clearContactNumberDuplicateState(input);
+    return true;
+  }
+
+  try {
+    const query = new URLSearchParams({
+      contact_number: input.value
+    });
+
+    if (excludeUserId) {
+      query.set('exclude_user_id', String(excludeUserId));
+    }
+
+    const response = await fetch(`../../../api/check_contact_number.php?${query.toString()}`, {
+      headers: {
+        'X-Requested-With': 'XMLHttpRequest'
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error('Unable to verify contact number.');
+    }
+
+    const result = await response.json();
+
+    if (requestSequence !== undefined) {
+      const currentNormalized = normalizeContactNumber(input.value);
+
+      if (currentNormalized !== normalized) {
+        return !result.exists;
+      }
+    }
+
+    if (result.exists) {
+      showContactNumberDuplicateState(input, 'Contact number already exists.');
+      return false;
+    }
+
+    clearContactNumberDuplicateState(input);
+    return true;
+  } catch (error) {
+    clearContactNumberDuplicateState(input);
+    return true;
+  }
+}
+
+function normalizeContactNumber(value) {
+  return (value || '').replace(/\D+/g, '');
+}
+
+function showContactNumberDuplicateState(input, message) {
+  const helpText = getFieldHelpText(input);
+
+  input.setCustomValidity(message);
+  input.classList.add('is-invalid');
+  input.classList.remove('is-valid');
+
+  if (helpText) {
+    helpText.innerHTML = `<span class="text-danger"><i class="fa fa-exclamation-triangle me-1"></i>${message}</span>`;
+  }
+}
+
+function clearContactNumberDuplicateState(input) {
+  const helpText = getFieldHelpText(input);
+
+  input.setCustomValidity('');
+  input.classList.remove('is-invalid');
+
+  if (helpText) {
+    helpText.innerHTML = '';
+  }
+}
+
+function getFieldHelpText(input) {
+  const formGroup = input.closest('.form-group-clean');
+
+  return formGroup ? formGroup.querySelector('.form-help') : null;
+}
 
 // --- UI Notification Utility ---
 function showNotification(message, type) {

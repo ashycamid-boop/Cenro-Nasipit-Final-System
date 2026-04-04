@@ -2,6 +2,8 @@
 session_start();
 require_once __DIR__ . '/../../../config/db.php';
 require_once __DIR__ . '/../../../helpers/profile_image_helper.php';
+require_once __DIR__ . '/../../../helpers/contact_number_helper.php';
+require_once __DIR__ . '/../../../helpers/email_helper.php';
 
 if (empty($_SESSION['role']) || $_SESSION['role'] !== 'Admin') {
     header('Location: /prototype/index.php');
@@ -143,9 +145,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_user'])) {
         $lastName = trim($_POST['lastName'] ?? '');
         $suffix = trim($_POST['suffix'] ?? '');
         $position = $_POST['position'] ?? null;
+        $userId = (int) ($_POST['user_id'] ?? 0);
+        $email = trim((string) ($_POST['email'] ?? ''));
+        $contactNumber = trim((string) ($_POST['contactNumber'] ?? ''));
 
         $fullName = trim($firstName . ' ' . $middleName . ' ' . $lastName . ' ' . $suffix);
         $fullName = trim(preg_replace('/\s+/', ' ', $fullName)); // Remove extra spaces
+
+        if (userEmailExists($pdo, $email, $userId)) {
+            throw new Exception('Email already exists.');
+        }
+
+        if (userContactNumberExists($pdo, $contactNumber, $userId)) {
+            throw new Exception('Contact number already exists.');
+        }
 
         // Handle password update (optional)
         $updatePassword = false;
@@ -167,14 +180,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_user'])) {
 
             $stmt->execute([
                 ':full_name' => $fullName,
-                ':email' => $_POST['email'],
+                ':email' => $email,
                 ':role' => $_POST['role'],
-                ':contact_number' => $_POST['contactNumber'],
+                ':contact_number' => $contactNumber,
                 ':office_unit' => $_POST['officeUnit'],
                 ':profile_picture' => $profile_picture,
                 ':password' => $hashedPassword,
                 ':position' => $position,
-                ':id' => $_POST['user_id']
+                ':id' => $userId
             ]);
         } else {
             $stmt = $pdo->prepare("
@@ -187,13 +200,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_user'])) {
 
             $stmt->execute([
                 ':full_name' => $fullName,
-                ':email' => $_POST['email'],
+                ':email' => $email,
                 ':role' => $_POST['role'],
-                ':contact_number' => $_POST['contactNumber'],
+                ':contact_number' => $contactNumber,
                 ':office_unit' => $_POST['officeUnit'],
                 ':profile_picture' => $profile_picture,
                 ':position' => $position,
-                ':id' => $_POST['user_id']
+                ':id' => $userId
             ]);
         }
 

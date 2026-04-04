@@ -152,10 +152,13 @@
                       <td><?php echo htmlspecialchars($person_address); ?></td>
                       <td><?php echo htmlspecialchars($person_contact); ?></td>
                       <td><?php echo htmlspecialchars($person_role); ?></td>
-                      <?php $personBadge = map_status_to_class($person_status); ?>
+                      <?php
+                        $personBadge = map_status_to_class($person_status);
+                        $personBadgeTextClass = stripos(trim((string)$person_status), 'convict') !== false ? ' text-white' : '';
+                      ?>
                       <td>
                         <?php if (trim((string)$person_status) !== ''): ?>
-                          <span class="badge <?php echo $personBadge; ?>" id="person-status-<?php echo $person_id; ?>"><?php echo htmlspecialchars($person_status); ?></span>
+                          <span class="badge <?php echo $personBadge . $personBadgeTextClass; ?>" id="person-status-<?php echo $person_id; ?>"><?php echo htmlspecialchars($person_status); ?></span>
                         <?php else: ?>
                           <span class="text-muted">-</span>
                         <?php endif; ?>
@@ -266,9 +269,9 @@
                   <th>Item Type</th>
                   <th>Description</th>
                   <th>Quantity</th>
-                  <th>Dimension (T Ã— W Ã— L)</th>
+                  <th>Dimension (T &times; W &times; L)</th>
                   <th>Volume (Bd.ft./cu.m.)</th>
-                  <th>Estimated Value (Ã¢â€šÂ±)</th>
+                  <th>Estimated Value (&#8369;)</th>
                   <th>Remarks No.</th>
                   <th>Status</th>
                   <th>Evidence</th>
@@ -305,7 +308,7 @@
                             $parts[] = ($t !== null && $t !== '') ? rtrim(rtrim(number_format((float)$t, 3, '.', ''), '0'), '.') : '-';
                             $parts[] = ($w !== null && $w !== '') ? rtrim(rtrim(number_format((float)$w, 3, '.', ''), '0'), '.') : '-';
                             $parts[] = ($l !== null && $l !== '') ? rtrim(rtrim(number_format((float)$l, 3, '.', ''), '0'), '.') : '-';
-                            echo htmlspecialchars(implode(' Ã— ', $parts) . ' (in Ã— in Ã— ft)');
+                            echo htmlspecialchars(implode(' x ', $parts) . ' (in x in x ft)');
                           } else {
                             echo '<span class="text-muted">-</span>';
                           }
@@ -501,3 +504,5 @@
   <script src="../../../../public/assets/js/enforcement_officer/case_detailsupdate.js"></script>
 </body>
 </html>
+
+

@@ -5,6 +5,8 @@
 session_start();
 require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/../helpers/profile_image_helper.php';
+require_once __DIR__ . '/../helpers/contact_number_helper.php';
+require_once __DIR__ . '/../helpers/email_helper.php';
 
 function ensureUserNamePartsTable(PDO $pdo): void
 {
@@ -59,11 +61,13 @@ if ($firstName === '' || $lastName === '' || !filter_var($email, FILTER_VALIDATE
     exit;
 }
 
-// Check if email exists
-$stmt = $pdo->prepare('SELECT id FROM users WHERE email = ? LIMIT 1');
-$stmt->execute([$email]);
-if ($stmt->fetch()) {
-    header('Location: ../modules/admin/views/user_management.php?err=Email+already+exists');
+if (userEmailExists($pdo, $email)) {
+    header('Location: ../modules/admin/views/add_user.php?err=Email+already+exists');
+    exit;
+}
+
+if (userContactNumberExists($pdo, $contact)) {
+    header('Location: ../modules/admin/views/add_user.php?err=Contact+number+already+exists');
     exit;
 }
 

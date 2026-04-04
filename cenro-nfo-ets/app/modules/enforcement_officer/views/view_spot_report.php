@@ -247,9 +247,9 @@
                   <th>Item Type</th>
                   <th>Description</th>
                   <th>Quantity</th>
-                  <th>Dimension (T Ã— W Ã— L)</th>
+                  <th>Dimension (T &times; W &times; L)</th>
                   <th>Volume (Bd.ft./cu.m.)</th>
-                  <th>Estimated Value (Ã¢â€šÂ±)</th>
+                  <th>Estimated Value (&#8369;)</th>
                   <th>Remarks No.</th>
                   <th>Status</th>
                   <th>Evidence</th>
@@ -273,7 +273,7 @@
                             $parts[] = ($t !== null && $t !== '') ? rtrim(rtrim(number_format((float)$t, 3, '.', ''), '0'), '.') : '-';
                             $parts[] = ($w !== null && $w !== '') ? rtrim(rtrim(number_format((float)$w, 3, '.', ''), '0'), '.') : '-';
                             $parts[] = ($l !== null && $l !== '') ? rtrim(rtrim(number_format((float)$l, 3, '.', ''), '0'), '.') : '-';
-                            echo htmlspecialchars(implode(' Ã— ', $parts) . ' (in Ã— in Ã— ft)');
+                            echo htmlspecialchars(implode(' x ', $parts) . ' (in x in x ft)');
                           } else {
                             echo '<span class="text-muted">-</span>';
                           }
@@ -412,3 +412,5 @@
   <script src="../../../../public/assets/js/enforcement_officer/view_spot_report.js"></script>
 </body>
 </html>
+
+

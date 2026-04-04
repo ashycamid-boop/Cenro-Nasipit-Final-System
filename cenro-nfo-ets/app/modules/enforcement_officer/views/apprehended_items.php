@@ -101,7 +101,7 @@
                     <th>Reference No.</th>
                     <th>Item Type</th>
                     <th>Description</th>
-                    <th>Dimension (T Ã— W Ã— L)</th>
+                    <th>Dimension (T &times; W &times; L)</th>
                     <th>Quantity</th>
                     <th>Volume</th>
                     <th>Evidence</th>
@@ -135,7 +135,7 @@
                               $parts[] = ($t !== null && $t !== '') ? rtrim(rtrim(number_format((float)$t, 3, '.', ''), '0'), '.') : '-';
                               $parts[] = ($w !== null && $w !== '') ? rtrim(rtrim(number_format((float)$w, 3, '.', ''), '0'), '.') : '-';
                               $parts[] = ($l !== null && $l !== '') ? rtrim(rtrim(number_format((float)$l, 3, '.', ''), '0'), '.') : '-';
-                              echo htmlspecialchars(implode(' Ã— ', $parts) . ' (in Ã— in Ã— ft)');
+                              echo htmlspecialchars(implode(' x ', $parts) . ' (in x in x ft)');
                             } else {
                               echo '<span class="text-muted">-</span>';
                             }
@@ -228,3 +228,5 @@
   </div>
 </body>
 </html>
+
+

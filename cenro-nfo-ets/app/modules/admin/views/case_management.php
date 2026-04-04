@@ -289,6 +289,7 @@ $sidebarRole = (isset($_SESSION['role']) && $_SESSION['role'] === 'Admin')
                         }
                         $estRaw = isset($r['est_value']) ? $r['est_value'] : null;
                         $est = ($estRaw !== null && $estRaw !== '') ? ('â‚± ' . number_format((float)$estRaw, 2)) : '-';
+                        $est = ($estRaw !== null && $estRaw !== '') ? ('&#8369; ' . number_format((float)$estRaw, 2)) : '-';
                         $viewUrl = 'case_details.php?ref=' . urlencode($r['reference_no']);
                         $editUrl = 'case_detailsupdate.php?id=' . urlencode($r['reference_no']);
                         echo "<tr>\n";

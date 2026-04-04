@@ -110,6 +110,14 @@ try {
             </div>
           </div>
 
+          <?php if (!empty($_GET['err'])): ?>
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+              <i class="fa fa-exclamation-triangle me-2"></i>
+              <?php echo htmlspecialchars((string) $_GET['err'], ENT_QUOTES, 'UTF-8'); ?>
+              <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+          <?php endif; ?>
+
           
           <form id="addUserForm" method="post" enctype="multipart/form-data" action="../../../auth/register.php">
           <input type="hidden" name="cropped_profile_picture" id="cropped_profile_picture">
@@ -155,13 +163,13 @@ try {
                             <label for="firstName" class="form-label-clean">
                               First Name<span class="required-mark">*</span>
                             </label>
-                            <input type="text" name="firstName" class="form-control-clean" id="firstName" required placeholder="Enter first name">
+                            <input type="text" name="firstName" class="form-control-clean" id="firstName" required placeholder="Enter first name" autocapitalize="words">
                           </div>
                         </div>
                         <div class="col-12 col-md-3">
                           <div class="form-group-clean">
                             <label for="middleName" class="form-label-clean">Middle Name</label>
-                            <input type="text" name="middleName" class="form-control-clean" id="middleName" placeholder="Enter middle name">
+                            <input type="text" name="middleName" class="form-control-clean" id="middleName" placeholder="Enter middle name" autocapitalize="words">
                           </div>
                         </div>
                         <div class="col-12 col-md-3">
@@ -169,13 +177,13 @@ try {
                             <label for="lastName" class="form-label-clean">
                               Last Name<span class="required-mark">*</span>
                             </label>
-                            <input type="text" name="lastName" class="form-control-clean" id="lastName" required placeholder="Enter last name">
+                            <input type="text" name="lastName" class="form-control-clean" id="lastName" required placeholder="Enter last name" autocapitalize="words">
                           </div>
                         </div>
                         <div class="col-12 col-md-3">
                           <div class="form-group-clean">
                             <label for="suffix" class="form-label-clean">Suffix</label>
-                            <input type="text" name="suffix" class="form-control-clean" id="suffix" placeholder="Jr., Sr., III">
+                            <input type="text" name="suffix" class="form-control-clean" id="suffix" placeholder="Jr., Sr., III" autocapitalize="words">
                           </div>
                         </div>
                       </div>
@@ -299,7 +307,7 @@ try {
                             <label for="position" class="form-label-clean">
                               Position<span class="required-mark">*</span>
                             </label>
-                            <input type="text" name="position" class="form-control-clean" id="position" required placeholder="Enter position">
+                            <input type="text" name="position" class="form-control-clean" id="position" required placeholder="Enter position" autocapitalize="words">
                           </div>
                         </div>
                       </div>
@@ -326,7 +334,7 @@ try {
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
   <script src="../../../../public/assets/js/admin/navigation.js?v=20260315-6"></script>
   <script src="../../../../public/assets/js/shared/profile-image-cropper.js"></script>
-  <script src="../../../../public/assets/js/admin/add_user.js?v=20260315-1"></script>
+  <script src="../../../../public/assets/js/admin/add_user.js?v=20260404-2"></script>
 
 
 </body>

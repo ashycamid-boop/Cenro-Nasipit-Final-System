@@ -328,6 +328,6 @@
   <script src="../../../../public/assets/js/admin/navigation.js"></script>
   <script src="../../../../public/assets/js/shared/profile-image-cropper.js"></script>
 
-  <script src="../../../../public/assets/js/admin/edit_user.js"></script>
+  <script src="../../../../public/assets/js/admin/edit_user.js?v=20260404-2"></script>
 </body>
 </html>
